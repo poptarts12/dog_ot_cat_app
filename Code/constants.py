@@ -1,7 +1,7 @@
-
-
-
-
 SERVER_IP = "0.0.0.0"
 CLIENT_IP = "127.0.0.1"
+
+
+BUFFER_SIZE = 2048
+
 PORT = 6969
