@@ -1,15 +1,15 @@
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
-from tkinter import filedialog as fd
+from PIL import ImageTk, Image
 
 import socket
 from constants import *
 
-
-
 # global variables to work with gui buttons and more
 is_file_selected = False
 filename_selected = "Default.png"
+
+root = tk.Tk()
 
 
 canvas = ''
@@ -19,9 +19,7 @@ message = ""
 def GUI():
     # setting up the window itself
     global filename_selected
-    global canvas
     global message
-    root = tk.Tk()
     root.resizable(False, False)
     root.geometry("1000x1000")  # set the size
     root.title("cat or dogs recognizer")
@@ -29,32 +27,41 @@ def GUI():
     greetings = tk.Label(root, text="Hello and welcome to dog or cat recognizer!")
     greetings.pack()
 
+
     # giving instruction on how to use the application
     instructions = tk.Label(root, text="Please choose the picture you want to check!")
     instructions.pack()
 
-    open_image = tk.Button(root, text="Open Image", command=open_image_chooser)
+    img = ImageTk.PhotoImage(Image.open(filename_selected))
+    label = tk.Label(root, image=img,width= 900, height= 850)
+    label.pack()
+
+    open_image = tk.Button(root, text="Open Image", command=lambda: open_image_chooser(label))
     open_image.pack()
-
-    # the image of the file just for entertainment
-    canvas = tk.Canvas(root, width=1000, height=1000)
-    canvas.pack()
-    # putting an image
-    img = tk.PhotoImage(file=filename_selected)
-    canvas.create_image(20, 20, anchor=tk.NW, image=img)
-
-
 
     # Starting the Application
     root.mainloop()
 
 
-def open_image_chooser():
+def resize_checker(img):
+    if img.width > 900:
+        img = img.resize((900, img.height), Image.ANTIALIAS)
+    if img.height > 850:
+        img = img.resize((img.width, 850), Image.ANTIALIAS)
+    return img
+
+def open_image_chooser(label):
     global filename_selected
     global is_file_selected
     filename_selected = askopenfilename()
     is_file_selected = True
     print("You have selected : %s" % filename_selected)
+    img = Image.open(filename_selected)
+    img = resize_checker(img)
+    img = ImageTk.PhotoImage(img)
+    label.image = img
+    label.configure(image=img)
+    label.pack()
 
 
 # connecting to server
