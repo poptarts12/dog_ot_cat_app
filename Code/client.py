@@ -13,8 +13,7 @@ filename_selected = "Default.png"
 root = tk.Tk()
 
 canvas = ''
-message = ""
-
+message = tk.Label()
 
 def GUI():
     # setting up the window itself
@@ -88,6 +87,7 @@ def send_file(path: str, socket: socket.socket):
 def send_chosen_file(socket):
     global filename_selected
     global is_file_selected
+    global message
     global answer
     global got_answer
     global canvas
@@ -98,13 +98,13 @@ def send_chosen_file(socket):
             is_file_selected = False
             # converting the file to image first
             image_path = filename_selected
-            img = tk.PhotoImage(file=image_path)
             print("pizdez")
             # sending the image
             send_file(image_path, socket)
             response = socket.recv(BUFFER_SIZE).decode()
             print(response)
-            message.config(text=response)
+            message.configure(text=response)
+            message.pack()
 
 
 # connecting to server
@@ -120,7 +120,6 @@ def main():
     client = connect_client()
     # send public key
     # sending file and initiating gui
-    send_file(PUBLICK_CLIENT, client)
     client
     send_file_thread = threading.Thread(target=send_chosen_file, args=(client,))
     send_file_thread.start()
