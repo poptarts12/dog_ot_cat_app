@@ -41,6 +41,7 @@ def GUI():
     open_image.pack()
 
     # Starting the Application
+    print("this framework shit runs good")
     root.mainloop()
 
 
@@ -69,18 +70,12 @@ def open_image_chooser(label):
 def send_file(path: str, socket: socket.socket):
     if os.path.isfile(path):
         with open(path, "rb") as file:  # "rb" mode opens the file in binary format for reading
-            content = file.read()
-            # calculating in how many packets the file will be sent
-            number_of_packets = len(content) // BUFFER_SIZE + (1 if len(content) % BUFFER_SIZE != 0 else 0)
-            try:
-                bytes_number_of_packets = number_of_packets.to_bytes(2, "big")
-            except:
-                exit("File too large to be sent")
-            # sending amount of packets
-            socket.send(bytes_number_of_packets)
-            # sending file
-            for packet_index in range(number_of_packets):
-                socket.send(content[packet_index * BUFFER_SIZE: (packet_index + 1) * BUFFER_SIZE])
+            content = file.read(BUFFER_SIZE)
+            while content:  #if not all the data sent(the data sends in packets of 2048 bytes)
+                socket.send(content)
+                content = file.read(BUFFER_SIZE)
+                print("sent something")
+
 
 
 # running in thread and checking if user chose a file if a file was chosen it is sent and waits for an answer
@@ -109,16 +104,16 @@ def send_chosen_file(socket):
 
 # connecting to server
 def connect_client() -> socket.socket:
-    client = socket.socket()
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((CLIENT_IP, PORT))
+    print("conected")
     return client
 
 
 def main():
-    # generating keys
-    # connecting to server
+    #connecting to server
     client = connect_client()
-    # send public key
+    print(client)
     # sending file and initiating gui
     client
     send_file_thread = threading.Thread(target=send_chosen_file, args=(client,))

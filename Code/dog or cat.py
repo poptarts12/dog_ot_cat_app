@@ -15,6 +15,7 @@ from keras.layers import Dense
 
 classifier = Sequential()
 
+
 # Step 1 - Convolution
 # Apply a method 'add' on the object 'classifier'
 # Filter = Feature Detector = Feature Kernel
@@ -69,7 +70,7 @@ train_datagen = ImageDataGenerator(rescale = 1./255,
 test_datagen = ImageDataGenerator(rescale = 1./255)
 
 # 'batch_size' is the number of images that go through the CNN every weight update cycle
-# Increase 'target_size' to improve model accuracy 
+# Increase 'target_size' to improve model accuracy
 
 training_set = train_datagen.flow_from_directory('../Data/training_set',
                                                  target_size = (64, 64),
@@ -83,15 +84,15 @@ test_set = test_datagen.flow_from_directory('../Data/test_set',
                                             class_mode = 'binary')
 
 
-
 # Train the model
 # Increase 'epochs' to boost model performance (takes longer)
+batch_size = 8000
+
 classifier.fit_generator(training_set,
-                         steps_per_epoch = 8000,
-                         epochs = 1,
+                         steps_per_epoch = 250,
+                         epochs = 32,
                          validation_data = test_set,
                          validation_steps = 2000)
-
 
 
 # Save model to file
@@ -119,7 +120,6 @@ model = load_model('../Data/saved_model/CNN_Cat_Dog_Model.h5')
 
 
 
-
 # Part 3 - Making new predictions
 
 # Place a new picture of a cat or dog in 'single_prediction' folder and see if your model works
@@ -130,9 +130,8 @@ test_image = image.load_img('../Data/single_prediction/cat_or_dog_2.jpg', target
 test_image = image.img_to_array(test_image)
 # Add one more dimension to beginning of image array so 'Predict' function can receive it (corresponds to Batch, even if only one batch)
 test_image = np.expand_dims(test_image, axis = 0)
-result = classifier.predict(test_image)
+result = model.predict(test_image)
 # We now need to pull up the mapping between 0/1 and cat/dog
-training_set.class_indices
 # Map is 2D so check the first row, first column value
 if result[0][0] == 1:
     prediction = 'dog'
@@ -140,7 +139,6 @@ else:
     prediction = 'cat'
 # Print result
 
-print("The model class indices are:", training_set.class_indices)
 
 print("\nPrediction: " + prediction)
 
