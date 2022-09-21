@@ -36,7 +36,7 @@ def get_file(client: socket.socket):
 
 def main():
     # load the model
-    model = load_model('../Data/saved_model/CNN_Cat_Dog_Model.h5')
+    model = load_model('CNN_Cat_Dog_Model.h5')
     # Examine model
     model.summary()
 

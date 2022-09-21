@@ -1,4 +1,5 @@
 import threading
+import cv2
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
 from PIL import ImageTk, Image
@@ -34,11 +35,14 @@ def GUI():
     message.pack()
 
     img = ImageTk.PhotoImage(Image.open(filename_selected))
-    label = tk.Label(root, image=img, width=900, height=850)
+    label = tk.Label(root, image=img, width=900, height=850) #crop picture/camera
     label.pack()
 
     open_image = tk.Button(root, text="Open Image", command=lambda: open_image_chooser(label))
     open_image.pack()
+
+    open_camera = tk.Button(root, text="Open Camera", command=lambda: open_webcam_thread(label))
+    open_camera.pack()
 
     # Starting the Application
     print("this framework shit runs good")
@@ -52,6 +56,37 @@ def resize_checker(img):
         img = img.resize((img.width, 850), Image.ANTIALIAS)
     return img
 
+def open_webcam_thread(label):
+    webcam = threading.Thread(target=open_webcam)
+    webcam.start()
+
+def open_webcam():
+    label = create_window()
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, label.winfo_width())
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, label.winfo_height())
+
+    def show_frame():
+        try:
+            _, frame = cap.read()
+            frame = cv2.flip(frame, 1)
+            cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+            img = Image.fromarray(cv2image)
+            imgtk = ImageTk.PhotoImage(image=img)
+            label.imgtk = imgtk
+            label.configure(image=imgtk)
+            label.after(10, show_frame)
+        except:
+            tk.messagebox.showerror(title="camera problem",message="there is no camera connection. please check if the camera connected.")
+    show_frame()
+
+def create_window():
+    another_window = tk.Toplevel()
+    another_window.title("camera")
+    another_window.geometry("600x800")
+    label = tk.Label(another_window, width=900, height=850)
+    label.pack()
+    return label
 
 def open_image_chooser(label):
     global filename_selected
