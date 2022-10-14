@@ -66,27 +66,35 @@ def open_webcam():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, label.winfo_width())
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, label.winfo_height())
 
-    def show_frame():
+    def show_frames():
         try:
-            _, frame = cap.read()
-            frame = cv2.flip(frame, 1)
-            cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+            cv2image = cv2.cvtColor(cap.read()[1], cv2.COLOR_BGR2RGB)
             img = Image.fromarray(cv2image)
             imgtk = ImageTk.PhotoImage(image=img)
             label.imgtk = imgtk
             label.configure(image=imgtk)
-            label.after(10, show_frame)
+            label.after(20, show_frames)
         except:
             tk.messagebox.showerror(title="camera problem",message="there is no camera connection. please check if the camera connected.")
-    show_frame()
+    show_frames()
 
 def create_window():
-    another_window = tk.Toplevel()
+    another_window = tk.Toplevel(root)
     another_window.title("camera")
     another_window.geometry("600x800")
     label = tk.Label(another_window, width=900, height=850)
     label.pack()
+    screenshot = tk.Button(another_window,text="take screenshot", command=lambda :take_screenshot(label))
+    screenshot.pack()
     return label
+
+def take_screenshot(label):
+    file_name = f"{label.frame_num}.png"
+    imagetk = label.imgtk
+    imgpil = ImageTk.getimage( imagetk )
+    imgpil.save(file_name, "PNG")
+    imgpil.close()
+
 
 def open_image_chooser(label):
     global filename_selected

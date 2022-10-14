@@ -2,6 +2,7 @@ from constants import *
 import socket
 from keras.models import load_model
 import numpy as np
+import _thread as th
 from tensorflow.keras.preprocessing import image
 
 file_name = "temp file.jpg"
@@ -9,8 +10,16 @@ file_name = "temp file.jpg"
 
 # get one user to the server
 def get_user(server: socket.socket):
+    print('Socket is listening..')
     server.listen(NUMBER_OF_USERS)
-    return server.accept()
+    ThreadCount = 0
+    while True:
+        Client, address = server.accept()
+        print('Connected to: ' + address[0] + ':' + str(address[1]))
+        ThreadCount += 1
+        print('Thread Number: ' + str(ThreadCount))
+        return Client, address
+
 
 
 def get_file(client: socket.socket):
@@ -26,13 +35,22 @@ def get_file(client: socket.socket):
         # get the rest of the data
         try:
             image_data = client.recv(BUFFER_SIZE)
+            file.write(image_data)
             print("receiving data")
         except socket.timeout:
             print('there is no more data to pass')
+            file.close()
             client.settimeout(None)
             break
     print("done")
 
+def create_server() ->socket.socket():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        server.bind((SERVER_IP, PORT))
+    except socket.error as e:
+        print(str(e))
+    return server
 
 def main():
     # load the model
@@ -48,10 +66,7 @@ def main():
 
     print("yes it works!!!yes!!")
 
-    # create server
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((SERVER_IP, PORT))
-
+    server = create_server()
     while True:
         print("waiting for client")
         # get client
