@@ -46,7 +46,7 @@ def GUI(client):
     open_image = tk.Button(root, text="Open Image", command=lambda: open_image_chooser(label))
     open_image.pack()
 
-    open_camera = tk.Button(root, text="Open Camera", command=lambda: open_webcam_thread())
+    open_camera = tk.Button(root, text="Open Camera", command=lambda: open_webcam_thread(open_image))
     open_camera.pack()
 
     # Starting the Application
@@ -72,41 +72,49 @@ def resize_checker(img):
     return img
 
 
-def open_webcam_thread():
+def open_webcam_thread(open_image_button):
+    open_image_button["state"] = 'disabled'
     webcam = threading.Thread(target=open_webcam)
     webcam.start()
 
 
 def open_webcam():
     label = create_window()
+    width, height = 800, 600
     cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, label.winfo_width())
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, label.winfo_height())
-    try:
-        cv2image = cv2.cvtColor(cap.read()[1], cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(cv2image)
-        imgtk = ImageTk.PhotoImage(image=img)
-        label.imgtk = imgtk
-        label.configure(image=imgtk)
-        label.after(20, show_frames)
-    except:
-        tk.messagebox.showerror(title="camera problem",
-                                message="there is no camera connection. please check if the camera connected.")
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    def show_frame():
+        try:
+            _, frame = cap.read()
+            frame = cv2.flip(frame, 1)
+            cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+            img = Image.fromarray(cv2image)
+            imgtk = ImageTk.PhotoImage(image=img)
+            label.imgtk = imgtk
+            label.configure(image=imgtk)
+            label.after(10, show_frame)
+        except:
+            tk.messagebox.showerror(title="camera problem",
+                                    message="there is no camera connection. please check if the camera connected.")
+    show_frame()
 
+def take_screenshot_thread(label):
+    thred = threading.Thread(target=take_screenshot,args=(label,))
+    thred.start()
 
 def create_window():
     another_window = tk.Toplevel(root)
     another_window.title("camera")
-    another_window.geometry("600x800")
-    label = tk.Label(another_window, width=900, height=850)
+    label = tk.Label(another_window)
     label.pack()
-    screenshot = tk.Button(another_window, text="take screenshot", command=lambda: take_screenshot(label))
+    screenshot = tk.Button(another_window, text="take screenshot", command=lambda: take_screenshot_thread(label))
     screenshot.pack()
     return label
 
 
 def take_screenshot(label):
-    file_name = f"{label.frame_num}.png"
+    file_name = "screenshot.png"
     imagetk = label.imgtk
     imgpil = ImageTk.getimage(imagetk)
     imgpil.save(file_name, "PNG")
