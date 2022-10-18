@@ -32,11 +32,11 @@ def get_file_data(client: socket.socket, thread_number):
         print(properties_message)
         format_type, packets_num = protocol.filter_message(properties_message)
         file_name_per_thread = str(thread_number) + file_name + format_type
-        file = open(file_name_per_thread, "wb")
         sent_data = True
         if packets_num == -1 and format_type == "close":  # the client in exit mode
             sent_data = False
         if sent_data:  # if true then there is image to receive
+            file = open(file_name_per_thread, "wb")
             print(f"receiving data from {packets_num} packets in thread {thread_number}")
             for i in range(0, packets_num + 1):
                 image_data = client.recv(BUFFER_SIZE)
@@ -45,7 +45,6 @@ def get_file_data(client: socket.socket, thread_number):
                     break
             print("there is no more data")
             file.close()
-            os.remove(file_name_per_thread)  # clean trash and be with security :)
             print("done receiving\n")
         return sent_data, file_name_per_thread
     except ConnectionResetError:
@@ -85,9 +84,9 @@ def client_thread(client: socket.socket, model, thread_number):
             print("Prediction: " + result)
             # send result
             client.send(result.encode())
-            print("prediction sent")
+            print("Prediction sent")
         else:
-            print(f"client number {thread_number} is done,client closed.")
+            print(f"client number {thread_number} is done,client closed.\n")
             client.close()
             break
 
@@ -105,6 +104,7 @@ def get_result(model, file_name_for_thread) -> str:
         answer = 'this is dog'
     else:
         answer = 'this is cat'
+    os.remove(file_name_for_thread)  # clean trash and be with security :)
     return answer
 
 

@@ -123,18 +123,23 @@ def open_image_chooser():
     global message
     try:
         filename_selected = askopenfilename()
-        print("You have selected : %s" % filename_selected)
-        is_file_selected = True  # after we see there is no problems with the file
-        message.configure(text="al good!the image in process...")
-        message.pack()
+        if put_selected_picture_on_window():
+            is_file_selected = True  # after we see there is no problems with the file
+            print("You have selected : %s" % filename_selected)
+            message.configure(text="al good!the image in process...")
+            message.pack()
     except AttributeError:  # if the user didn't choose a picture and just closed the explorer for file path
         is_file_selected = False
+        message.configure(text="You need to choose a picture,please try again.")
+        message.pack()
         print("he didn't chose a picture,fuck.")
         tk.messagebox.showerror(title="picture error",
                                 message="there is no picture you chose. please chose again.")
     except:  # if we don't know what the error
         is_file_selected = False
         print("error that i dont know")
+        message.configure(text="Error")
+        message.pack()
         tk.messagebox.showerror(title="error",
                                 message="please try again.")
 
