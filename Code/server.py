@@ -6,7 +6,7 @@ import threading
 import protocol
 from tensorflow.keras.preprocessing import image
 
-file_name = "temp file.jpg"
+file_name = "temp file."
 
 
 # get one user to the server
@@ -23,11 +23,13 @@ def get_users(server: socket.socket, model):
         client_thread_taker.start()
 
 
-def get_file_data(client: socket.socket):
+def get_file_data(client: socket.socket, thread_number):
+    global file_name
     try:  # if the client crached
         propereties_message = client.recv(BUFFER_SIZE).decode()  # first message is how many packets
-        file = open(file_name, "wb")
         format, packets_num = protocol.filter_message(propereties_message)
+        file_name_for_client = str(thread_number) + file_name  + format
+        file = open(file_name_for_client, "wb")
         sended_data = True
         if packets_num == -1 and format == "close":  # the client in exit mode
             sended_data = False
@@ -41,11 +43,11 @@ def get_file_data(client: socket.socket):
             print("there is no more data")
             file.close()
             print("done receiving\n")
-        return sended_data
+        return sended_data,file_name_for_client
     except ConnectionResetError:
         print("client crash")
         client.close()
-        return False
+        return False,"no file"
 
 
 def create_server() -> socket.socket():
@@ -66,14 +68,15 @@ def main():
     print("yes it works!!!yes!!")
     print("waiting for clients")
     # get client
-    get_users(server, model, )
+    get_users(server, model)
 
 
 def client_thread(client: socket.socket, model, thread_number):
     # get first message and check if there is any data to get
     while True:
-        if get_file_data(client):
-            result = get_result(model)
+        get_file_data_check,file_name_for_client = get_file_data(client,thread_number)
+        if get_file_data_check:
+            result = get_result(model, file_name_for_client)
             # Print result
             print("Prediction: " + result)
             # send result
@@ -85,9 +88,8 @@ def client_thread(client: socket.socket, model, thread_number):
             break
 
 
-def get_result(model) -> str:
-    global file_name
-    test_image = image.load_img(file_name, target_size=(64, 64))
+def get_result(model,file_name_for_thread) -> str:
+    test_image = image.load_img(file_name_for_thread, target_size=(64, 64))
     # Add a 3rd Color dimension to match Model expectation
     test_image = image.img_to_array(test_image)
     # Add one more dimension to beginning of image array so 'Predict' function can receive it (corresponds to Batch, even if only one batch)

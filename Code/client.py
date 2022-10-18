@@ -71,46 +71,50 @@ def resize_checker(img):
         img = img.resize((img.width, 850), Image.ANTIALIAS)
     return img
 
+def open_webcam_thread(openImage_button):
+    thread = threading.Thread(target=open_webcam,args=(openImage_button,))
+    thread.start()
 
-def open_webcam_thread(open_image_button):
-    open_image_button["state"] = 'disabled'
-    webcam = threading.Thread(target=open_webcam)
-    webcam.start()
+def open_webcam(openImage_button):
+    global is_file_selected
+    global filename_selected
+    global running
+    openImage_button["state"] = "disabled"  # for only one way to get picture
+    cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    cv2.namedWindow("test")
 
+    x, y = 0, 100  # positions for text
+    img_counter = 0
 
-def open_webcam():
-    label = create_window()
-    width, height = 800, 600
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-    def show_frame():
-        try:
-            _, frame = cap.read()
-            frame = cv2.flip(frame, 1)
-            cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
-            img = Image.fromarray(cv2image)
-            imgtk = ImageTk.PhotoImage(image=img)
-            label.imgtk = imgtk
-            label.configure(image=imgtk)
-            label.after(10, show_frame)
-        except:
-            tk.messagebox.showerror(title="camera problem",
-                                    message="there is no camera connection. please check if the camera connected.")
-    show_frame()
+    while running:
+        ret, frame = cam.read()
+        frame = cv2.flip(frame, 1)
+        without_text_frame = frame
+        try:  # if the window only opening for first time
+            without_text_frame = frame.copy()
+        except AttributeError:
+            print("webcam is now opening")
+        cv2.putText(img=frame, text="Press space for screenshot", org=(x, y),
+                    fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1, color=(255, 0, 0), thickness=4)
+        if not ret:
+            print("failed to grab frame")
+            break
+        cv2.imshow("test", frame)
+        k = cv2.waitKey(1)
+        if cv2.getWindowProperty("test", cv2.WND_PROP_VISIBLE) < 1:  # if the client closing the window
+            cv2.destroyAllWindows()
+            openImage_button["state"] = "active"
+            break
+        elif k % 256 == 32:
+            # SPACE pressed
+            img_name = "webcam_opencv_frame.png"
+            cv2.imwrite(img_name, without_text_frame)
+            filename_selected = img_name
+            is_file_selected = True
+            print("{} written!".format(img_name))
+            img_counter += 1
 
-def take_screenshot_thread(label):
-    thred = threading.Thread(target=take_screenshot,args=(label,))
-    thred.start()
-
-def create_window():
-    another_window = tk.Toplevel(root)
-    another_window.title("camera")
-    label = tk.Label(another_window)
-    label.pack()
-    screenshot = tk.Button(another_window, text="take screenshot", command=lambda: take_screenshot_thread(label))
-    screenshot.pack()
-    return label
+    cam.release()
 
 
 def take_screenshot(label):
@@ -135,7 +139,7 @@ def open_image_chooser(label):
         # show to the client what he chose
         label.configure(image=img)
         label.pack()
-        is_file_selected = True # after we see there is no problems with the file
+        is_file_selected = True  # after we see there is no problems with the file
         message.configure(text="al good!the message in process...")
         message.pack()
     except AttributeError:  # if the user didn't choose a picture and just closed the explorer for file path
@@ -149,7 +153,7 @@ def open_image_chooser(label):
         tk.messagebox.showerror(title="format error",
                                 message="the format you chose not supported,please choose or convert for "
                                         "another picture format.")
-    except: #if we dont know what the eror
+    except:  # if we dont know what the eror
         is_file_selected = False
         print("error that i dont know")
         tk.messagebox.showerror(title="error",
@@ -158,7 +162,7 @@ def open_image_chooser(label):
 
 def send_file(path: str, socket: socket.socket) -> bool:
     if os.path.isfile(path):
-        packets_num = protocol.get_number_of_packets(os.path.getsize(path)) # know how many packets to send
+        packets_num = protocol.get_number_of_packets(os.path.getsize(path))  # know how many packets to send
         properties_message = protocol.make_propereties_message(os.path.getsize(path), path)
         socket.send(properties_message.encode())
         with open(path, "rb") as file:  # "rb" mode opens the file in binary format for reading
